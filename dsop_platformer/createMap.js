@@ -6,6 +6,12 @@ var player;
 var score = 0;
 var scoreText;
 
+var HORIZONTAL_TOP_SPEED = 200;
+var JUMP_VELOCITY = 200;
+var WALLJUMP_HORIZONTAL = 50;
+var WALLJUMP_VERTICAL = 200;
+var HORIZONTAL_ACCEL = 300;
+
     //tilemap stuff
 var map;
 var MAP_WIDTH = 60;
@@ -34,18 +40,18 @@ createMap.prototype = {
     create: function() {
         MAP_WIDTH = 60;
         MAP_HEIGHT = 40;
-        this.game.input.keyboard.addKey(Phaser.Keyboard.S).onDown.add(function () {   LogTiles();}, this);
-        this.game.input.keyboard.addKey(Phaser.Keyboard.C).onDown.add(function () {   CameraMode();}, this);
-    
-        this.game.stage.backgroundColor = '#2d2d2d';
-        this.game.add.sprite(0, 0, 'sky');
+        game.input.keyboard.addKey(Phaser.Keyboard.S).onDown.add(function () {  this.LogTiles();}, this);
+        game.input.keyboard.addKey(Phaser.Keyboard.C).onDown.add(function () {  this.CameraMode();}, this);
+        game.input.keyboard.addKey(Phaser.Keyboard.Z).onDown.add(function () {  this.Jump();}, this);
+        game.stage.backgroundColor = '#2d2d2d';
+        game.add.sprite(0, 0, 'sky');
         //  Creates a blank tilemap
-        map = this.game.add.tilemap();
+        map = game.add.tilemap();
         map.tileWidth = 32;
         map.tileHeight = 32;
         map.width = 19;
         map.height = 6;
-        this.game.world.setBounds(0, 0, MAP_WIDTH * map.tileWidth, MAP_HEIGHT * map.tileHeight);
+        game.world.setBounds(0, 0, MAP_WIDTH * map.tileWidth, MAP_HEIGHT * map.tileHeight);
         //  Add a Tileset image to the map
         map.addTilesetImage('tiles');
         map.setCollisionBetween(40, 43);
@@ -61,32 +67,33 @@ createMap.prototype = {
         //  Create our tile selector at the top of the screen
         this.createTileSelector();
     
-        this.game.input.addMoveCallback(this.updateMarker, this);
+        game.input.addMoveCallback(this.updateMarker, this);
     
-        //add sprite and this.game stuff
-        this.game.physics.startSystem(Phaser.Physics.ARCADE);
+        //add sprite and game stuff
+        game.physics.startSystem(Phaser.Physics.ARCADE);
     
-        player = this.game.add.sprite(32, 100, 'dude');
+        player = game.add.sprite(32, 100, 'dude');
         for(var i = 0; i < 6; i++){
                 map.putTile(42, i, 12, currentLayer);
         }
-        this.game.physics.arcade.enable(player);
-        player.body.bounce.y = 0.2;
+        game.physics.arcade.enable(player);
+        player.body.bounce.y = 0;
+        player.body.bounce.x = 0;
         player.body.gravity.y = 300;
         player.body.collideWorldBounds = true;
         player.animations.add('left', [0, 1, 2, 3], 10, true);
         player.animations.add('right', [5, 6, 7, 8], 10, true);
         
-        cursors = this.game.input.keyboard.createCursorKeys();
-        this.game.camera.follow(player, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
+        cursors = game.input.keyboard.createCursorKeys();
+        game.camera.follow(player, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
 
     },
 
         pickTile: function(sprite, pointer) {
         
-        currentTile = this.game.math.snapToFloor(pointer.x, map.tileWidth) / map.tileWidth;
-        var x = this.game.math.snapToFloor(pointer.x, map.tileWidth, 0);
-        var y = this.game.math.snapToFloor(pointer.y, map.tileHeight, 0);
+        currentTile = game.math.snapToFloor(pointer.x, map.tileWidth) / map.tileWidth;
+        var x = game.math.snapToFloor(pointer.x, map.tileWidth, 0);
+        var y = game.math.snapToFloor(pointer.y, map.tileHeight, 0);
         
         x /= map.tileWidth;
         y /= map.tileHeight;
@@ -98,10 +105,10 @@ createMap.prototype = {
     
     updateMarker: function() {
     
-        marker.x = currentLayer.getTileX(this.game.input.activePointer.worldX) * map.tileWidth;
-        marker.y = currentLayer.getTileY(this.game.input.activePointer.worldY) * map.tileHeight;
+        marker.x = currentLayer.getTileX(game.input.activePointer.worldX) * map.tileWidth;
+        marker.y = currentLayer.getTileY(game.input.activePointer.worldY) * map.tileHeight;
     
-        if (this.game.input.mousePointer.isDown)
+        if (game.input.mousePointer.isDown)
         {
             map.putTile(currentTile, currentLayer.getTileX(marker.x), currentLayer.getTileY(marker.y), currentLayer);
             // map.fill(currentTile, currentLayer.getTileX(marker.x), currentLayer.getTileY(marker.y), 4, 4, currentLayer);
@@ -111,23 +118,28 @@ createMap.prototype = {
 
     update: function() {
         touchingTile = false;
-        this.game.physics.arcade.collide(player, layer1, this.TileCollide, null, this);
-        
-        player.body.velocity.x = 0;
-        
-            player.body.velocity.x = 0;
+        game.physics.arcade.collide(player, layer1, this.TileCollide, null, this);
+        player.body.acceleration.x = 0;
+        if(player.body.blocked.down)
+            player.body.drag = new Phaser.Point(200, 200);
+        else if (player.body.blocked.left || player.body.blocked.right)
+            player.body.drag = new Phaser.Point(75, 75);
+        else
+            player.body.drag = new Phaser.Point(0, 0);
         if(cursorMode == true){
             if (cursors.left.isDown)
             {
                 //  Move to the left
-                player.body.velocity.x = -150;
+                if(player.body.velocity.x > -HORIZONTAL_TOP_SPEED)
+                    player.body.acceleration.x =  -HORIZONTAL_ACCEL;
     
                 player.animations.play('left');
             }
             else if (cursors.right.isDown)
             {
                 //  Move to the right
-                player.body.velocity.x = 150;
+                if(player.body.velocity.x < HORIZONTAL_TOP_SPEED)
+                    player.body.acceleration.x = HORIZONTAL_ACCEL;
     
                 player.animations.play('right');
             }
@@ -138,11 +150,9 @@ createMap.prototype = {
     
                 player.frame = 4;
             }
-    
-            //  Allow the player to jump if they are touching the ground.
-            if (cursors.up.isDown && player.body.onFloor())
+            if (cursors.up.isDown)
             {
-                player.body.velocity.y = -150;
+
             }
             
             if (cursors.down.isDown){
@@ -152,20 +162,36 @@ createMap.prototype = {
         } else {
             if (cursors.left.isDown)
             {
-                this.game.camera.x -= 4;
+                game.camera.x -= 4;
             }
             else if (cursors.right.isDown)
             {
-                this.game.camera.x += 4;
+                game.camera.x += 4;
             }
     
             if (cursors.up.isDown)
             {
-                this.game.camera.y -= 4;
+                game.camera.y -= 4;
             }
             else if (cursors.down.isDown)
             {
-                this.game.camera.y += 4;
+                game.camera.y += 4;
+            }
+        }
+    },
+    
+    Jump: function(){
+        
+        if(player.body.onFloor())
+            player.body.velocity.y = -JUMP_VELOCITY;
+        else{
+            //check touching sides for wall jumps
+            if(player.body.blocked.right){
+                player.body.velocity.y = -WALLJUMP_VERTICAL;
+                player.body.velocity.x = -HORIZONTAL_TOP_SPEED;
+            } else if (player.body.blocked.left){
+                player.body.velocity.y = -WALLJUMP_VERTICAL;
+                player.body.velocity.x = HORIZONTAL_TOP_SPEED;
             }
         }
     },
@@ -173,27 +199,28 @@ createMap.prototype = {
     CameraMode: function(){
         cursorMode = !cursorMode;
         if(cursorMode){
-            this.game.camera.follow(player, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
+            game.camera.follow(player, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
         } else {
-            this.game.camera.follow(null);
+            game.camera.follow(null);
         }
     },
     
     render: function() {
     
-        this.game.debug.text('Current Layer: ' + currentLayer.name, 16, 550);
-        this.game.debug.text('1-3 Switch Layers. SPACE = Show All. Cursors = Move Camera', 16, 570);
-          this.game.debug.cameraInfo(this.game.camera, 32, 32);
+        //game.debug.text('Current Layer: ' + currentLayer.name, 16, 550);
+        //game.debug.text('1-3 Switch Layers. SPACE = Show All. Cursors = Move Camera', 16, 570);
+          //game.debug.cameraInfo(game.camera, 32, 32);
     
-    
+        game.debug.bodyInfo(player, 16, 24);
+
     },
     
     createTileSelector: function() {
     
         //  Our tile selection window
-        var tileSelector = this.game.add.group();
+        var tileSelector = game.add.group();
     
-        var tileSelectorBackground = this.game.make.graphics();
+        var tileSelectorBackground = game.make.graphics();
         tileSelectorBackground.beginFill(0x000000, 0.5);
         tileSelectorBackground.drawRect(0, 0, 800, 18);
         tileSelectorBackground.endFill();
@@ -207,7 +234,7 @@ createMap.prototype = {
         tileSelector.fixedToCamera = true;
     
         //  Our painting marker
-        marker = this.game.add.graphics();
+        marker = game.add.graphics();
         marker.lineStyle(2, 0x000000, 1);
         marker.drawRect(0, 0, map.tileWidth, map.tileHeight);
     
@@ -237,7 +264,7 @@ createMap.prototype = {
         request.onload = function() {
           if (request.status >= 200 && request.status < 400){
             // Success!
-            // here you could go to the leaderboard or restart your this.game .
+            // here you could go to the leaderboard or restart your game .
             console.log("Saved successfuly");
           } else {
             // We reached our target server, but it returned an error
