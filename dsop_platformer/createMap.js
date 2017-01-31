@@ -59,8 +59,6 @@ createMap.prototype = {
     
         layer1 = map.createBlankLayer('level1', MAP_WIDTH, MAP_HEIGHT, map.tileWidth, map.tileHeight);
     
-        map.putTile(6, 39, 29, layer1);
-    
         currentLayer = layer1;
         //layer1.debug = true; // uncheck to show which tiles have collision
     
@@ -243,7 +241,7 @@ createMap.prototype = {
     LogTiles: function(){
         
         //Generate tileset data
-        var tileset = "content=";
+        var tileset = "content=" + game.global.user + ":END:";
         for(var y = 0; y < MAP_HEIGHT; y++){
             for(var x = 0; x < MAP_WIDTH; x++){
                 var mapTile = map.getTile(x, y, layer1, true);
