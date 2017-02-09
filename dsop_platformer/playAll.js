@@ -1,5 +1,5 @@
 
-var createMap = function(game){ 
+var playAll = function(game){ 
     
 }
 var player;    
@@ -29,15 +29,14 @@ var showLayersKey;
 var layer1Key;
 var layer2Key;
 var layer3Key;
-var startX = -1;
-var startY = -1;
+    
     
 var cursorMode = true; //using arrows to move character or map
 
 var touchingTile = false;
 
 
-createMap.prototype = {
+playAll.prototype = {
     create: function() {
         MAP_WIDTH = 60;
         MAP_HEIGHT = 40;
@@ -50,13 +49,14 @@ createMap.prototype = {
         map = game.add.tilemap();
         map.tileWidth = 32;
         map.tileHeight = 32;
-        map.width = 9;
+        map.width = 8;
         map.height = 1;
         game.world.setBounds(0, 0, MAP_WIDTH * map.tileWidth, MAP_HEIGHT * map.tileHeight);
         //  Add a Tileset image to the map
         map.addTilesetImage('tiles');
-        map.setCollisionBetween(1, 7);
-
+        map.setCollisionBetween(40, 43);
+        map.setCollisionBetween(104, 107);
+    
         layer1 = map.createBlankLayer('level1', MAP_WIDTH, MAP_HEIGHT, map.tileWidth, map.tileHeight);
     
         currentLayer = layer1;
@@ -72,7 +72,7 @@ createMap.prototype = {
     
         player = game.add.sprite(32, 100, 'dude');
         for(var i = 0; i < 6; i++){
-                map.putTile(2, i, 12, currentLayer);
+                map.putTile(42, i, 12, currentLayer);
         }
         game.physics.arcade.enable(player);
         player.body.bounce.y = 0;
@@ -84,15 +84,10 @@ createMap.prototype = {
         
         cursors = game.input.keyboard.createCursorKeys();
         game.camera.follow(player, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
-        
-        map.setTileIndexCallback(1, this.Goal, this);
-        map.setTileIndexCallback(4, this.UpSpikes, this);
-        map.setTileIndexCallback(5, this.RightSpikes, this);
-        map.setTileIndexCallback(6, this.DownSpikes, this);
-        map.setTileIndexCallback(7, this.LeftSpikes, this);
+
     },
 
-    pickTile: function(sprite, pointer) {
+        pickTile: function(sprite, pointer) {
         
         currentTile = game.math.snapToFloor(pointer.x, map.tileWidth) / map.tileWidth;
         var x = game.math.snapToFloor(pointer.x, map.tileWidth, 0);
@@ -113,26 +108,10 @@ createMap.prototype = {
     
         if (game.input.mousePointer.isDown)
         {
-            if(game.input.mousePointer.y > 32){
-                if(currentTile == 8)
-                    map.putTile(-1, currentLayer.getTileX(marker.x), currentLayer.getTileY(marker.y), currentLayer);
-                else if(currentTile == 0)
-                {
-                    if(startX >= 0) // if there is already a start position clear it before adding the new one
-                    {
-                        map.putTile(-1, startX, startY, currentLayer);
-    
-                    }
-                        map.putTile(currentTile, currentLayer.getTileX(marker.x), currentLayer.getTileY(marker.y), currentLayer);
-                        startX = currentLayer.getTileX(marker.x);
-                        startY = currentLayer.getTileY(marker.y)
-                    
-                }
-                else
-                    map.putTile(currentTile, currentLayer.getTileX(marker.x), currentLayer.getTileY(marker.y), currentLayer);
-                // map.fill(currentTile, currentLayer.getTileX(marker.x), currentLayer.getTileY(marker.y), 4, 4, currentLayer);
-            }
+            map.putTile(currentTile, currentLayer.getTileX(marker.x), currentLayer.getTileY(marker.y), currentLayer);
+            // map.fill(currentTile, currentLayer.getTileX(marker.x), currentLayer.getTileY(marker.y), 4, 4, currentLayer);
         }
+    
     },
 
     update: function() {
@@ -197,8 +176,6 @@ createMap.prototype = {
                 game.camera.y += 4;
             }
         }
-        if(player.y >= 12321)
-            this.Goal();
     },
     
     Jump: function(){
@@ -233,6 +210,7 @@ createMap.prototype = {
           //game.debug.cameraInfo(game.camera, 32, 32);
     
         game.debug.bodyInfo(player, 16, 24);
+
     },
     
     createTileSelector: function() {
@@ -242,7 +220,7 @@ createMap.prototype = {
     
         var tileSelectorBackground = game.make.graphics();
         tileSelectorBackground.beginFill(0x000000, 0.5);
-        tileSelectorBackground.drawRect(0, 0, 800, 32);
+        tileSelectorBackground.drawRect(0, 0, 800, 18);
         tileSelectorBackground.endFill();
     
         tileSelector.add(tileSelectorBackground);
@@ -297,30 +275,5 @@ createMap.prototype = {
     
     TileCollide: function( first, second) {
         touchingTile = true;
-    },
-    
-    Goal: function(){
-        player.body.x = startX * map.tileWidth;
-        player.body.y = startY * map.tileWidth;
-    },
-    
-    UpSpikes: function(sprite, tile){
-        if(player.y < tile.top)
-            this.Goal();
-    },
-    
-    RightSpikes: function(sprite, tile){
-        if(player.x > tile.right)
-            this.Goal();
-    }, 
-    
-    LeftSpikes: function(sprite, tile){
-        if(player.x < tile.left)
-            this.Goal();
-    },
-    
-    DownSpikes: function(sprite, tile){
-        if(player.y > tile.bottom)
-            this.Goal();
     }
 };
