@@ -1,5 +1,7 @@
 var input;
 var statusLabel;
+var oReq;
+var testLevel = false;
 var menuState = {
     create: function () {        
         game.world.setBounds(0, 0, window.innerWidth, window.innerHeight);
@@ -38,6 +40,7 @@ var menuState = {
     },
     
     test: function() {
+        testLevel = true;
         game.global.user = input.value;
         game.global.user = game.global.user.replace(/\W/g, '')
         //try to load the file here and load the level if it succeeds, send a message if it fails
@@ -46,6 +49,10 @@ var menuState = {
     },
     
     play: function() {
+        oReq = new XMLHttpRequest();
+        oReq.addEventListener("load", this.reqListener);
+        oReq.open("GET", 'https://phaser-yngar.c9users.io/dsop_platformer/levelList.php');
+        oReq.send();
     },
     
     loadTestLevel: function() {
@@ -53,8 +60,13 @@ var menuState = {
     },
     
     fileComplete: function (progress, cacheKey, success, totalLoaded, totalFiles) {
-        if(success)
-            this.loadTestLevel();
+        console.log("file complete");
+        if(success){
+            if(testLevel)
+                this.loadTestLevel();
+            else
+                game.state.start('playAll');
+        }
         else
             statusLabel.setText("level with name " + game.global.user + " could not be found\nrefresh the page and try again");
     },
@@ -64,6 +76,17 @@ var menuState = {
     },
     
     startPlayAll: function () {
-        game.state.start('playAll');
+        game.load.tilemap('testTiles', 'saved_levels/' + game.global.levels[game.global.index]);
+        game.load.start();
     },
+    
+    reqListener: function () {
+        var levelString = this.responseText;
+        levelString = levelString.replace('[', '');
+        levelString = levelString.replace(']', '');
+        levelString = levelString.split("\"").join('');
+        game.global.levels = levelString.split(',');
+        console.log(game.global.levels);
+        menuState.startPlayAll();
+    }
 }

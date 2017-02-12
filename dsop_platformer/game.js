@@ -1,7 +1,9 @@
 var game = new Phaser.Game(800, 600, Phaser.Auto, 'gameDiv');
 
 game.global = {
-    user: 'anonymous'
+    user: 'anonymous',
+    levels: [],
+    index: 0
 }
 
 game.state.add('boot', bootState);
