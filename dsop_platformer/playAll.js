@@ -23,8 +23,18 @@ var ySpawn = 100;
 
 var cursors;
 
+var leftButton;
+var rightButton;
+var jumpButton;
+var touchButton;
+    
 var cursorMode = true; //using arrows to move character or map
 
+var touchingTile = false;
+var UI;
+var buttons = false;
+var rightDown = false;
+var leftDown = false;
 
 
 playAll.prototype = {
@@ -80,12 +90,15 @@ playAll.prototype = {
         
         cursors = game.input.keyboard.createCursorKeys();
         game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER, 1, 1);
-        
+        touchButton = game.add.button(600, 16, 'touchButton', this.AddTouch, this, 2, 1, 0);
+
         map.setTileIndexCallback(17, this.Goal, this);
         map.setTileIndexCallback(12, this.UpSpikes, this);
         map.setTileIndexCallback(13, this.RightSpikes, this);
         map.setTileIndexCallback(20, this.DownSpikes, this);
-        map.setTileIndexCallback(21, this.LeftSpikes, this);
+        map.setTileIndexCallback(21, this.LeftSpikes, this);        
+        UI = game.add.group();
+        UI.add(touchButton);
     },
 
     update: function() {
@@ -93,7 +106,9 @@ playAll.prototype = {
             game.stage.backgroundColor = '#4D3668';
         else
             game.stage.backgroundColor = '#fef7b7';
-        
+        UI.x = this.camera.x + 28;
+        UI.y = this.camera.y + 28;
+
         touchingTile = false;
         game.physics.arcade.collide(player, layer1, this.TileCollide, null, this);
         player.body.acceleration.x = 0;
@@ -103,9 +118,19 @@ playAll.prototype = {
             player.body.drag = new Phaser.Point(75, 75);
         else
             player.body.drag = new Phaser.Point(0, 0);
-        if(cursorMode == true){
+         if(cursorMode == true){
+            if(!buttons){
             if (cursors.left.isDown)
-            {
+                {
+                    leftDown = true;
+    
+                }
+                else if (cursors.right.isDown)
+                {
+                    rightDown = true;
+                }
+            }
+            if(leftDown){
                 //  Move to the left
                 if(player.body.velocity.x > -HORIZONTAL_TOP_SPEED)
                     player.body.acceleration.x =  -HORIZONTAL_ACCEL;
@@ -117,9 +142,7 @@ playAll.prototype = {
                     player.frame = 2;
                 else if(player.body.velocity.y > 0)
                     player.frame = 1;
-            }
-            else if (cursors.right.isDown)
-            {
+            } else if(rightDown){
                 //  Move to the right
                 if(player.body.velocity.x < HORIZONTAL_TOP_SPEED)
                     player.body.acceleration.x = HORIZONTAL_ACCEL;
@@ -166,6 +189,10 @@ playAll.prototype = {
             {
                 game.camera.y += 4;
             }
+        }
+        if(!buttons){
+            leftDown = false;
+            rightDown = false;
         }
         if(player.y >= 1820)
             this.Die();
@@ -242,6 +269,38 @@ playAll.prototype = {
         if(player.body.top + 1 > tile.bottom)
             this.Die();
         return true;
+    },        
+    
+    AddTouch: function(){
+        buttons = true;
+        leftButton = game.add.button(10 + game.camera.x, 400 , 'leftButton', null, this, 2, 1, 0);
+        leftButton.onInputDown.add(this.pressLeft, this);
+        leftButton.onInputUp.add(this.releaseLeft, this);
+        UI.add(leftButton);
+        rightButton = game.add.button(150 + game.camera.x, 400 , 'rightButton', null, this, 2, 1, 0);
+        rightButton.onInputDown.add(this.pressRight, this);
+        rightButton.onInputUp.add(this.releaseRight, this);
+        UI.add(rightButton);
+        jumpButton = game.add.button(700 + game.camera.x, 400 , 'jumpButton', null, this, 2, 1, 0);
+        jumpButton.onInputDown.add(this.Jump);
+        UI.add(jumpButton);
+        touchButton.destroy();
+    },
+    
+    pressLeft: function(){
+        leftDown = true;
+    },
+    
+    pressRight: function(){
+        rightDown = true;
+    },
+    
+    releaseLeft: function(){
+        leftDown = false;
+    },
+    
+    releaseRight: function(){
+        rightDown = false;
     }
 };
 

@@ -31,12 +31,23 @@ var layer2Key;
 var layer3Key;
 var startX = -1;
 var startY = -1;
+
+var createButton;
+var leftButton;
+var rightButton;
+var saveButton;
+var jumpButton;
+var touchButton;
     
 var cursorMode = true; //using arrows to move character or map
 
 var touchingTile = false;
 var toolbox;
-
+var UI;
+var buttons = false;
+var rightDown = false;
+var leftDown = false;
+var buttonOver = false;
 
 createMap.prototype = {
     create: function() {
@@ -70,8 +81,7 @@ createMap.prototype = {
         //layer1.debug = true; // uncheck to show which tiles have collision
         toolbox = game.add.sprite(0, 0, 'toolbox');
 
-        //  Create our tile selector at the top of the screen
-        this.createTileSelector();
+
 
         game.input.addMoveCallback(this.updateMarker, this);
     
@@ -94,11 +104,20 @@ createMap.prototype = {
         cursors = game.input.keyboard.createCursorKeys();
         game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER, 1, 1);
         
+        saveButton = game.add.button(340, 15, 'saveButton', this.LogTiles, this, 2, 1, 0);
+        touchButton = game.add.button(600, 15, 'touchButton', this.AddTouch, this, 2, 1, 0);
         map.setTileIndexCallback(17, this.Goal, this);
         map.setTileIndexCallback(12, this.UpSpikes, this);
         map.setTileIndexCallback(13, this.RightSpikes, this);
         map.setTileIndexCallback(20, this.DownSpikes, this);
         map.setTileIndexCallback(21, this.LeftSpikes, this);
+        
+        UI = game.add.group();
+        UI.add(touchButton);
+        UI.add(toolbox);
+        UI.add(saveButton);
+                //  Create our tile selector at the top of the screen
+        this.createTileSelector();
     },
 
     pickTile: function(sprite, pointer) {
@@ -120,7 +139,19 @@ createMap.prototype = {
         marker.y = currentLayer.getTileY(game.input.activePointer.worldY) * map.tileHeight;
         if (game.input.activePointer.isDown)
         {
-            if(game.input.activePointer.y > 192 || game.input.activePointer.x > 384){
+            buttonOver = false;
+            if(buttons){
+                if(game.input.activePointer.x > leftButton.x && game.input.activePointer.x < leftButton.x + leftButton.width && game.input.activePointer.y > leftButton.y && game.input.activePointer.y < leftButton.y + leftButton.height)
+                    buttonOver = true;
+                if(game.input.activePointer.x > rightButton.x && game.input.activePointer.x < rightButton.x + rightButton.width && game.input.activePointer.y > rightButton.y && game.input.activePointer.y < rightButton.y + rightButton.height)
+                    buttonOver = true;    
+                if(game.input.activePointer.x > jumpButton.x && game.input.activePointer.x < jumpButton.x + jumpButton.width && game.input.activePointer.y > jumpButton.y && game.input.activePointer.y < jumpButton.y + jumpButton.height)
+                    buttonOver = true;
+                if(game.input.activePointer.x > saveButton.x && game.input.activePointer.x < saveButton.x + saveButton.width && game.input.activePointer.y > saveButton.y && game.input.activePointer.y < saveButton.y + saveButton.height)
+                    buttonOver = true;
+            }
+            if((game.input.activePointer.y > 192 || game.input.activePointer.x > 384) && !buttonOver){
+                
                 if(currentTile < 9 || currentTile == 10 || (currentTile >= 14 && currentTile <17) || currentTile > 22)
                     return;
                 if(currentTile == 22)
@@ -149,9 +180,13 @@ createMap.prototype = {
             game.stage.backgroundColor = '#4D3668';
         else
             game.stage.backgroundColor = '#fef7b7';
+            
 
-        toolbox.x = this.camera.x + 28;
-        toolbox.y = this.camera.y + 28;
+        UI.x = this.camera.x + 28;
+        UI.y = this.camera.y + 28;
+
+        
+        
         touchingTile = false;
         game.physics.arcade.collide(player, layer1, this.TileCollide, null, this);
         player.body.acceleration.x = 0;
@@ -162,8 +197,18 @@ createMap.prototype = {
         else
             player.body.drag = new Phaser.Point(0, 0);
         if(cursorMode == true){
+            if(!buttons){
             if (cursors.left.isDown)
-            {
+                {
+                    leftDown = true;
+    
+                }
+                else if (cursors.right.isDown)
+                {
+                    rightDown = true;
+                }
+            }
+            if(leftDown){
                 //  Move to the left
                 if(player.body.velocity.x > -HORIZONTAL_TOP_SPEED)
                     player.body.acceleration.x =  -HORIZONTAL_ACCEL;
@@ -175,9 +220,7 @@ createMap.prototype = {
                     player.frame = 2;
                 else if(player.body.velocity.y > 0)
                     player.frame = 1;
-            }
-            else if (cursors.right.isDown)
-            {
+            } else if(rightDown){
                 //  Move to the right
                 if(player.body.velocity.x < HORIZONTAL_TOP_SPEED)
                     player.body.acceleration.x = HORIZONTAL_ACCEL;
@@ -224,6 +267,10 @@ createMap.prototype = {
             {
                 game.camera.y += 4;
             }
+        }
+        if(!buttons){
+            leftDown = false;
+            rightDown = false;
         }
         if(player.y >= 1820)
             this.Goal();
@@ -348,5 +395,37 @@ createMap.prototype = {
         if(player.body.top + 1 > tile.bottom)
             this.Goal();
         return true;
+    },
+    
+    AddTouch: function(){
+        buttons = true;
+        leftButton = game.add.button(10 + game.camera.x, 400 , 'leftButton', null, this, 2, 1, 0);
+        leftButton.onInputDown.add(this.pressLeft, this);
+        leftButton.onInputUp.add(this.releaseLeft, this);
+        UI.add(leftButton);
+        rightButton = game.add.button(150 + game.camera.x, 400 , 'rightButton', null, this, 2, 1, 0);
+        rightButton.onInputDown.add(this.pressRight, this);
+        rightButton.onInputUp.add(this.releaseRight, this);
+        UI.add(rightButton);
+        jumpButton = game.add.button(700 + game.camera.x, 400 , 'jumpButton', null, this, 2, 1, 0);
+        jumpButton.onInputDown.add(this.Jump);
+        UI.add(jumpButton);
+        touchButton.destroy();
+    },
+    
+    pressLeft: function(){
+        leftDown = true;
+    },
+    
+    pressRight: function(){
+        rightDown = true;
+    },
+    
+    releaseLeft: function(){
+        leftDown = false;
+    },
+    
+    releaseRight: function(){
+        rightDown = false;
     }
 };
