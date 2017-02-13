@@ -33,18 +33,23 @@ playAll.prototype = {
         MAP_HEIGHT = 40;
         game.input.keyboard.addKey(Phaser.Keyboard.C).onDown.add(function () {  this.CameraMode();}, this);
         game.input.keyboard.addKey(Phaser.Keyboard.Z).onDown.add(function () {  this.Jump();}, this);
-        game.input.keyboard.addKey(Phaser.Keyboard.Q).onDown.add(function () { this.Goal();}, this);
-        game.stage.backgroundColor = '#2d2d2d';
-        game.add.sprite(0, 0, 'sky');
+        game.stage.backgroundColor = '#fef7b7';
+        for(var i = 0; i < 5; i++){
+            game.add.sprite(700 * i, 550, 'cloud1');
+            game.add.sprite(700 * i, 700, 'cloud2');
+            game.add.sprite(700 * i, 900, 'cloud3');
+            game.add.sprite(700 * i, 1090, 'cloud4');
+            game.add.sprite(700 * i, 1300, 'cloud5');
+        }
         //  Creates a blank tilemap
-        map = game.add.tilemap('testTiles', 32, 32);
+        map = game.add.tilemap('testTiles', 48, 48);
+        game.world.setBounds(0, 0, MAP_WIDTH * map.tileWidth, MAP_HEIGHT * map.tileHeight);
         layer1 = map.createLayer(0);
         layer1.resizeWorld();
 
         //  Add a Tileset image to the map
         map.addTilesetImage('tiles');
-        map.setCollisionBetween(1, 7);
-    
+        map.setCollision([11,12,13,17,19,20,21], true);      
         //add sprite and game stuff
         game.physics.startSystem(Phaser.Physics.ARCADE);
         
@@ -52,7 +57,7 @@ playAll.prototype = {
         for(var y = 0; y < MAP_HEIGHT; y++){
             for(var x = 0; x < MAP_WIDTH; x++){
                 var mapTile = map.getTile(x, y, layer1, true);
-                if(mapTile.index == 0){
+                if(mapTile.index == 9){
                     startX = x;
                     startY = y;
                 }
@@ -62,27 +67,33 @@ playAll.prototype = {
             xSpawn = startX * map.tileWidth;
             ySpawn = startY * map.tileWidth;
         }
-        player = game.add.sprite(xSpawn, ySpawn, 'dude');
+        player = game.add.sprite(xSpawn, ySpawn, 'pear');
         
         game.physics.arcade.enable(player);
+        player.body.setSize(36, 64, 18, 12);
         player.body.bounce.y = 0;
         player.body.bounce.x = 0;
         player.body.gravity.y = 300;
         player.body.collideWorldBounds = true;
-        player.animations.add('left', [0, 1, 2, 3], 10, true);
-        player.animations.add('right', [5, 6, 7, 8], 10, true);
+        player.animations.add('left', [3, 4], 10, true);
+        player.animations.add('right', [6, 7], 10, true);
         
         cursors = game.input.keyboard.createCursorKeys();
-        game.camera.follow(player, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
-
-        map.setTileIndexCallback(1, this.Goal, this);
-        map.setTileIndexCallback(4, this.UpSpikes, this);
-        map.setTileIndexCallback(5, this.RightSpikes, this);
-        map.setTileIndexCallback(6, this.DownSpikes, this);
-        map.setTileIndexCallback(7, this.LeftSpikes, this);
+        game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER, 1, 1);
+        
+        map.setTileIndexCallback(17, this.Goal, this);
+        map.setTileIndexCallback(12, this.UpSpikes, this);
+        map.setTileIndexCallback(13, this.RightSpikes, this);
+        map.setTileIndexCallback(20, this.DownSpikes, this);
+        map.setTileIndexCallback(21, this.LeftSpikes, this);
     },
 
     update: function() {
+        if(player.y > 1000)
+            game.stage.backgroundColor = '#4D3668';
+        else
+            game.stage.backgroundColor = '#fef7b7';
+        
         touchingTile = false;
         game.physics.arcade.collide(player, layer1, this.TileCollide, null, this);
         player.body.acceleration.x = 0;
@@ -98,23 +109,35 @@ playAll.prototype = {
                 //  Move to the left
                 if(player.body.velocity.x > -HORIZONTAL_TOP_SPEED)
                     player.body.acceleration.x =  -HORIZONTAL_ACCEL;
-    
-                player.animations.play('left');
+                if(player.body.blocked.down)
+                    player.animations.play('left');
+                else if(player.body.blocked.left)
+                    player.frame = 0;
+                else if(player.body.velocity.y < 0)
+                    player.frame = 2;
+                else if(player.body.velocity.y > 0)
+                    player.frame = 1;
             }
             else if (cursors.right.isDown)
             {
                 //  Move to the right
                 if(player.body.velocity.x < HORIZONTAL_TOP_SPEED)
                     player.body.acceleration.x = HORIZONTAL_ACCEL;
-    
-                player.animations.play('right');
+                if(player.body.blocked.down)
+                    player.animations.play('right');
+                else if(player.body.blocked.right)
+                    player.frame = 10;
+                else if(player.body.velocity.y < 0)
+                    player.frame = 8;
+                else if(player.body.velocity.y > 0)
+                    player.frame = 9;
             }
             else
             {
                 //  Stand still
                 player.animations.stop();
-    
-                player.frame = 4;
+                if(player.body.blocked.down)
+                    player.frame = 5;
             }
             if (cursors.up.isDown)
             {
@@ -144,6 +167,8 @@ playAll.prototype = {
                 game.camera.y += 4;
             }
         }
+        if(player.y >= 1820)
+            this.Die();
     },
     
     Jump: function(){
@@ -165,7 +190,7 @@ playAll.prototype = {
     CameraMode: function(){
         cursorMode = !cursorMode;
         if(cursorMode){
-            game.camera.follow(player, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
+            game.camera.follow(player, Phaser.Camera.FOLLOW_PLATFORMER, 1, 1);
         } else {
             game.camera.follow(null);
         }
@@ -196,22 +221,28 @@ playAll.prototype = {
     },
     
     UpSpikes: function(sprite, tile){
-        if(player.y < tile.top)
+        if(player.body.bottom - 1 < tile.top)
             this.Die();
+        return true;
     },
     
     RightSpikes: function(sprite, tile){
-        if(player.x > tile.right)
+        if(player.body.right + 1 > tile.right && player.body.bottom - 1 > tile.top && player.body.top + 1 < tile.bottom)
             this.Die();
+        return true;
     }, 
     
     LeftSpikes: function(sprite, tile){
-        if(player.x < tile.left)
+        if(player.body.left - 1 < tile.left && player.body.bottom - 1 > tile.top && player.body.top + 1 < tile.bottom)
             this.Die();
+        return true;
     },
     
     DownSpikes: function(sprite, tile){
-        if(player.y > tile.bottom)
+        if(player.body.top + 1 > tile.bottom)
             this.Die();
+        return true;
     }
 };
+
+    

@@ -1,4 +1,4 @@
-var game = new Phaser.Game(800, 600, Phaser.Auto, 'gameDiv');
+var game = new Phaser.Game(900, 600, Phaser.Auto, 'gameDiv');
 
 game.global = {
     user: 'anonymous',

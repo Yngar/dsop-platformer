@@ -4,28 +4,56 @@ var oReq;
 var testLevel = false;
 var menuState = {
     create: function () {        
+        game.input.addPointer();
+        game.input.addPointer();
         game.world.setBounds(0, 0, window.innerWidth, window.innerHeight);
+        //make background
+        game.stage.backgroundColor = '#fef7b7';
+        for(var i = 0; i < 2; i++){
+            game.add.sprite(700 * i, 20, 'cloud1');
+            game.add.sprite(700 * i, 100, 'cloud2');
+            game.add.sprite(700 * i, 150, 'cloud3');
+            game.add.sprite(700 * i, 250, 'cloud4');
+            game.add.sprite(700 * i, 300, 'cloud5');
+        }
+        game.add.sprite(30, 400, 'DSOP');
         
-        var nameLabel = game.add.text(80, 80, 'DSOP Level Design Workshop',
+        /*var nameLabel = game.add.text(80, 80, 'DSOP Level Design Workshop',
                             {font: '50px Arial', fill: '#ffffff'});
         
         var startLabel = game.add.text(80, 450,
                                     'press C to create level\npress T to test level\npress P to play all levels',
                                     {font: '25px Arial', fill: '#ffffff'});
-        statusLabel = game.add.text(100, 200,
+                                    */
+        statusLabel = game.add.text(500, 20,
                                     "enter a name the level will be saved as,\nthis name will be used to load and test the level" ,
-                                    {font: '12px Arial', fill: '#ffffff'});
+                                    {font: '14px Arial', fill: '#000000', fontWeight: 'bold'});
         
         var ckey = game.input.keyboard.addKey(Phaser.Keyboard.C);
         var tkey = game.input.keyboard.addKey(Phaser.Keyboard.T);
         var pkey = game.input.keyboard.addKey(Phaser.Keyboard.P);
 
         
-        ckey.onDown.addOnce(this.start, this);        
+        /*ckey.onDown.addOnce(this.start, this);        
         tkey.onDown.addOnce(this.test, this);
         pkey.onDown.addOnce(this.play, this);
+        */
+        var createButton = game.add.button(game.world.centerX - 275, 150, 'newButton', this.start, this, 2, 1, 0);
+        var testButton = game.add.button(game.world.centerX - 275, 300, 'testButton', this.test, this, 2, 1, 0);
+        var playButton = game.add.button(game.world.centerX - 275, 450, 'playButton', this.play, this, 2, 1, 0);
 
-        input = game.add.inputField(10, 400);
+        
+        input = game.add.inputField(game.world.centerX - 150, 100, {
+            font: '25px Arial',
+            fill: '#212121',
+            fontWeight: 'bold',
+            width: 150,
+            padding: 8,
+            borderWidth: 1,
+            borderColor: '#000',
+            borderRadius: 6,
+            placeHolder: 'Username'
+        });
         game.load.onLoadStart.add(this.loadStart, this);
         game.load.onFileComplete.add(this.fileComplete, this);
         game.camera.follow(null);
@@ -36,7 +64,9 @@ var menuState = {
     start: function() {
         game.global.user = input.value;
         game.global.user = game.global.user.replace(/\W/g, '')
-        game.state.start('createMap');
+        if(game.global.user != ''){
+            game.state.start('createMap');
+        }
     },
     
     test: function() {
