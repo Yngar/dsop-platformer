@@ -6,11 +6,12 @@ var player;
 var score = 0;
 var scoreText;
 
-var HORIZONTAL_TOP_SPEED = 200;
-var JUMP_VELOCITY = 200;
+//Player physics settings
+var HORIZONTAL_TOP_SPEED = 225;
+var JUMP_VELOCITY = 425;
 var WALLJUMP_HORIZONTAL = 50;
-var WALLJUMP_VERTICAL = 200;
-var HORIZONTAL_ACCEL = 300;
+var WALLJUMP_VERTICAL = 375;
+var HORIZONTAL_ACCEL = 2000;
 
     //tilemap stuff
 var map;
@@ -93,11 +94,11 @@ createMap.prototype = {
                 map.putTile(11, i, 12, currentLayer);
         }
         game.physics.arcade.enable(player);
-        player.body.setSize(36, 64, 18, 12);
+        player.body.setSize(30, 60, 23, 15);
         player.body.bounce.y = 0;
         player.body.bounce.x = 0;
-        player.body.gravity.y = 300;
-        player.body.collideWorldBounds = true;
+        player.body.gravity.y = 800;
+        player.body.collideWorldBounds = false;
         player.animations.add('left', [3, 4], 10, true);
         player.animations.add('right', [6, 7], 10, true);
         
@@ -191,9 +192,9 @@ createMap.prototype = {
         game.physics.arcade.collide(player, layer1, this.TileCollide, null, this);
         player.body.acceleration.x = 0;
         if(player.body.blocked.down)
-            player.body.drag = new Phaser.Point(200, 200);
+            player.body.drag = new Phaser.Point(1000, 200);
         else if (player.body.blocked.left || player.body.blocked.right)
-            player.body.drag = new Phaser.Point(75, 75);
+            player.body.drag = new Phaser.Point(500, 500);
         else
             player.body.drag = new Phaser.Point(0, 0);
         if(cursorMode == true){
